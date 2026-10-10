@@ -4,6 +4,11 @@
 
 Grafische Verwaltung von Benutzern, Gruppen, Dateirechten und ACLs für Linux (Python/Tkinter).
 © 2026 Eugen Becker. Alle Rechte vorbehalten.
+## **Lizenz / License**
+
+Der Quellcode ist öffentlich einsehbar. Alle Rechte vorbehalten. Eine Nutzung, Änderung oder Weiterverbreitung ist nur mit vorheriger schriftlicher Genehmigung des Rechteinhabers gestattet.
+
+The source code is publicly viewable. All rights reserved. Use, modification, or redistribution requires prior written permission from the copyright holder.
 
 ## Installation aus GitHub (apt-basierte Systeme: Debian, Ubuntu, Mint)
 
