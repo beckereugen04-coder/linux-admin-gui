@@ -386,3 +386,48 @@ def test_context_menu_stays_open_after_releasing_the_right_button(make_app):
     xd("click", "1")
     pump(0.4)
     assert recorded == ["invoked"] and not menu.winfo_ismapped()
+
+
+@pytest.mark.skipif(not be.shutil.which("xdotool"), reason="xdotool fehlt")
+@pytest.mark.parametrize("how", ["blank_table", "title_bar", "escape"])
+def test_context_menu_closes_without_choosing_anything(make_app, how):
+    """Regression: Ein Klick neben das Menü (oder Escape) muss es schließen, ohne etwas auszulösen."""
+    import time
+    app = make_app()
+    root = app.root
+    root.geometry("1240x780+0+0")
+
+    def pump(sec):
+        end = time.time() + sec
+        while time.time() < end:
+            root.update()
+            time.sleep(0.02)
+
+    pump(0.4)
+    app.show_page("users")
+    pump(0.2)
+    tree, menu, recorded = app.users_tree, app.user_menu, []
+    for i in range(menu.index("end") + 1):
+        if menu.type(i) == "command":
+            menu.entryconfigure(i, command=lambda i=i: recorded.append(i))
+    first = tree.get_children()[0]
+    x, y, w, h = tree.bbox(first)
+    xd = lambda *a: subprocess.run(["xdotool", *a], check=True, timeout=10)
+
+    xd("mousemove", str(tree.winfo_rootx() + x + 80), str(tree.winfo_rooty() + y + h // 2))
+    pump(0.2)
+    xd("mousedown", "3")
+    xd("mouseup", "3")
+    pump(0.5)
+    assert menu.winfo_ismapped()
+    if how == "escape":
+        xd("key", "Escape")
+    else:
+        target = {"blank_table": (tree.winfo_rootx() + 400, tree.winfo_rooty() + tree.winfo_height() - 60),
+                  "title_bar": (root.winfo_rootx() + 500, root.winfo_rooty() + 30)}[how]
+        xd("mousemove", str(target[0]), str(target[1]))
+        pump(0.25)
+        xd("click", "1")
+    pump(0.5)
+    assert not menu.winfo_ismapped()
+    assert recorded == []

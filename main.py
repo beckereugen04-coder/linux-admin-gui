@@ -292,10 +292,9 @@ class App:
         def release(event):
             if not tree.identify_row(event.y):
                 return
-            try:
-                menu.tk_popup(event.x_root + 2, event.y_root + 2)
-            finally:
-                menu.grab_release()
+            # Die von tk_popup gesetzte Maus-Sperre bleibt bewusst bestehen: Nur sie sorgt dafür,
+            # dass ein Klick neben das Menü es wieder schließt.
+            menu.tk_popup(event.x_root + 2, event.y_root + 2)
 
         tree.bind("<Button-3>", press)
         tree.bind("<ButtonRelease-3>", release)
