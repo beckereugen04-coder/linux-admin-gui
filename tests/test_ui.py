@@ -345,3 +345,44 @@ def test_ui_stays_responsive_during_long_action(make_app):
     app.root.after(30, tick)
     app.run_blocking(lambda: time.sleep(0.4))
     assert len(ticks) >= 5
+
+
+# ---------------------------------------------------- Rechtsklick-Kontextmenü --
+@pytest.mark.skipif(not be.shutil.which("xdotool"), reason="xdotool fehlt")
+def test_context_menu_stays_open_after_releasing_the_right_button(make_app):
+    """Regression: Das Menü ging beim Loslassen der Taste weg bzw. löste den ersten Eintrag aus."""
+    import time
+    app = make_app()
+    root = app.root
+    root.geometry("1240x780+0+0")
+
+    def pump(sec):
+        end = time.time() + sec
+        while time.time() < end:
+            root.update()
+            time.sleep(0.02)
+
+    pump(0.4)
+    app.show_page("users")
+    pump(0.2)
+    tree, menu, recorded = app.users_tree, app.user_menu, []
+    menu.entryconfigure(0, command=lambda: recorded.append("invoked"))
+    first = tree.get_children()[0]
+    x, y, w, h = tree.bbox(first)
+    ax, ay = tree.winfo_rootx() + x + 80, tree.winfo_rooty() + y + h // 2
+    xd = lambda *a: subprocess.run(["xdotool", *a], check=True, timeout=10)
+
+    xd("mousemove", str(ax), str(ay))
+    pump(0.2)
+    xd("mousedown", "3")
+    pump(0.3)
+    assert tree.selection() == (first,)                 # Zeile wird beim Drücken markiert
+    assert not menu.winfo_ismapped()                    # Menü erscheint noch nicht
+    xd("mouseup", "3")
+    pump(0.5)
+    assert menu.winfo_ismapped() and recorded == []     # bleibt offen, nichts ausgelöst
+    xd("mousemove", str(menu.winfo_rootx() + 40), str(menu.winfo_rooty() + menu.yposition(0) + 8))
+    pump(0.3)
+    xd("click", "1")
+    pump(0.4)
+    assert recorded == ["invoked"] and not menu.winfo_ismapped()

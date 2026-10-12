@@ -277,12 +277,28 @@ class App:
         """Etwas Luft links und rechts, damit Menüeinträge nicht gedrängt wirken."""
         return f"   {text}      "
 
-    def popup(self, menu, event, tree):
-        row = tree.identify_row(event.y)
-        if row:
-            tree.selection_set(row)
-            tree.focus(row)
-            menu.tk_popup(event.x_root, event.y_root)
+    def bind_context_menu(self, tree, menu):
+        """Rechtsklick-Menü: Zeile beim Drücken markieren, Menü erst beim LOSLASSEN öffnen.
+
+        Öffnet man es schon beim Drücken, löst Tk beim Loslassen den Eintrag unter dem
+        Mauszeiger aus bzw. schließt das Menü sofort wieder (man müsste die Taste halten).
+        """
+        def press(event):
+            row = tree.identify_row(event.y)
+            if row:
+                tree.selection_set(row)
+                tree.focus(row)
+
+        def release(event):
+            if not tree.identify_row(event.y):
+                return
+            try:
+                menu.tk_popup(event.x_root + 2, event.y_root + 2)
+            finally:
+                menu.grab_release()
+
+        tree.bind("<Button-3>", press)
+        tree.bind("<ButtonRelease-3>", release)
 
     @staticmethod
     def set_text(widget, text):
@@ -616,7 +632,7 @@ class App:
             if index:
                 self.user_menu.add_separator()
             self.fill_menu(self.user_menu, section)
-        self.users_tree.bind("<Button-3>", lambda e: self.popup(self.user_menu, e, self.users_tree))
+        self.bind_context_menu(self.users_tree, self.user_menu)
         self.users_tree.bind("<Double-1>", lambda e: self.show_memberships() if self.users_tree.selection() else None)
 
     def create_user(self):
@@ -907,7 +923,7 @@ class App:
 
         self.group_menu = theme.style_menu(tk.Menu(self.root), self.p)
         self.fill_menu(self.group_menu, [("g_folder", self.create_group_folder), None, ("g_delete", self.delete_group)])
-        self.groups_tree.bind("<Button-3>", lambda e: self.popup(self.group_menu, e, self.groups_tree))
+        self.bind_context_menu(self.groups_tree, self.group_menu)
 
     def show_group_members(self, _event=None):
         selection = self.groups_tree.selection()

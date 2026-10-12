@@ -5,7 +5,6 @@
 Grafische Verwaltung von Benutzern, Gruppen, Dateirechten und ACLs für Linux (Python/Tkinter).
 © 2026 Eugen Becker. Alle Rechte vorbehalten.
 
-
 ## Installation aus GitHub (apt-basierte Systeme: Debian, Ubuntu, Mint)
 
     sudo apt install git
